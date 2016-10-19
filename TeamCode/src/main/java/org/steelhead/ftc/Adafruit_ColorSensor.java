@@ -1,5 +1,7 @@
 package org.steelhead.ftc;
 
+import android.util.Log;
+
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.I2cController;
 import com.qualcomm.robotcore.hardware.I2cDevice;
@@ -61,7 +63,7 @@ public class Adafruit_ColorSensor implements I2cController.I2cPortReadyCallback 
 
     static final byte
         READ_MODE = 0x00 - 128,
-        RIGHT_MODE = 0x00;
+        WRITE_MODE = 0x00;
 
     static final int
         CACHE_MODE = 0,
@@ -97,16 +99,256 @@ public class Adafruit_ColorSensor implements I2cController.I2cPortReadyCallback 
         rLock = csDev.getI2cReadCacheLock();
         wLock = csDev.getI2cWriteCacheLock();
 
-        addWriteRequest(ENABLE, (Byte) (ENABLE_PON | ENABLE_AEN));
-        addReadRquest(ID, (byte) 1);
-        executeComands();
+        addWriteRequest(ENABLE, (byte) (ENABLE_PON | ENABLE_AEN));
+        addReadRequest(ID, (byte) 1);
+        executeCommands();
         csDev.registerForI2cPortReadyCallback(this);
         setGain(16);
         setIntegrationTime(50);
     }
 
+    public void close() {
+        transferQueue.close();
+        csDev.deregisterForPortReadyCallback();
+        csDev.close();
+    }
+
     @Override
     public void portIsReady(int port) {
+        try {
+            rLock.lock();
+            if (rCache[0] == wCache[0] && rCache[1] == wCache[1] && rCache[2] == wCache[2] &&
+                    rCache[3] == wCache[3]) {
+                rCache[DEV_ADDR] = 0;
+                storeReceivedData();
+                executeCommands();
+            } else {
+                csDev.readI2cCacheFromController();
+            }
+        } finally {
+            rLock.unlock();
+        }
+    }
 
+    private void readCommand(byte regNumber, byte regCount) {
+        try {
+            wLock.lock();
+            wCache[CACHE_MODE] = READ_MODE;
+            wCache[DEV_ADDR] = csDevAddr;
+            wCache[REG_NUMBER] = regNumber;
+            wCache[REG_COUNT] = regCount;
+            wCache[ACTION_FLAG] = -1;
+        } finally {
+            wLock.unlock();
+        }
+        csDev.writeI2cCacheToController();
+    }
+
+    private void writeCommand(byte regNumber, byte regCount, long regValue, boolean isLowFirst) {
+        try {
+            wLock.lock();
+            wCache[CACHE_MODE] = WRITE_MODE;
+            wCache[DEV_ADDR] = csDevAddr;
+            wCache[REG_NUMBER] = regNumber;
+            wCache[REG_COUNT] = regCount;
+            if (regCount == 1) {
+                wCache[DATA_OFFSET] = (byte) (regValue & 0xFF);
+            } else if (isLowFirst) {
+                for (int i = 0; i < regCount; i++) {
+                    wCache[DATA_OFFSET + i] = (byte) (regValue & 0xFF);
+                    regValue >>= 8;
+                }
+            } else {
+                for (int i = regCount - 1; i >= 0; i--) {
+                    wCache[DATA_OFFSET + i] = (byte) (regValue & 0xFF);
+                    regValue >>= 8;
+                }
+            }
+            wCache[ACTION_FLAG] = -1;
+        } finally {
+            wLock.unlock();
+        }
+        csDev.writeI2cCacheToController();
+    }
+
+    private void executeCommands() {
+        boolean isRead  = false;
+        boolean isWrite = false;
+        boolean isLowfirst = false;
+        byte regNumber = 0;
+        byte regCount = 0;
+        long regValue = 0;
+        try {
+            wLock.lock();
+            if (!transferQueue.isEmpty()) {
+                I2cTransfer element = transferQueue.remove();
+                isWrite = element.mode == WRITE_MODE;
+                isRead = element.mode == READ_MODE;
+                regNumber = element.regNumber;
+                regCount = element.regCount;
+                regValue = element.regValue;
+                isLowfirst = element.isLowFirst;
+                element = null;
+            }
+        } finally {
+            wLock.unlock();
+        }
+        if (isWrite) {
+            writeCommand(regNumber, regCount, regValue, isLowfirst);
+        } else if (isRead) {
+            readCommand(regNumber, regCount);
+        } else {
+            readCommand(DATA_START, DATA_LENGTH);
+        }
+    }
+
+    private void addWriteRequest(byte regNumber, byte regValue) {
+        addRequest(new I2cTransfer(regNumber, (byte) 1, regValue, true));
+    }
+
+    private void addWriteRequest(byte regNumber, byte regCount, byte regValue) {
+        addRequest(new I2cTransfer(regNumber, regCount, regValue, true));
+    }
+
+    private void addWriteRequest(byte regNumber, byte regCount, byte regValue, boolean isLowFirst) {
+        addRequest(new I2cTransfer(regNumber, regCount, regValue, isLowFirst));
+    }
+
+    private void addReadRequest(byte regNumber, byte regCount) {
+        transferQueue.add(new I2cTransfer(regNumber, regCount));
+    }
+
+    private void addRequest(I2cTransfer element) {
+        try {
+            rLock.lock();
+            try {
+                wLock.lock();
+                transferQueue.add(element);
+            } finally {
+                wLock.unlock();
+            }
+        } finally {
+            rLock.unlock();
+        }
+    }
+
+    private int getWord(int lowByte, int highByte) {
+        int low = rCache[DATA_OFFSET + lowByte - DATA_START] & 0xFF;
+        int high = rCache[DATA_OFFSET + highByte - DATA_START] & 0xFF;
+        return 256*high + low;
+    }
+
+    private void storeReceivedData() {
+        byte regNumber = rCache[REG_NUMBER];
+        byte regCount = rCache[REG_COUNT];
+
+        switch (regNumber) {
+            case DATA_START:
+                if(regCount == DATA_LENGTH) {
+                    clear = getWord(CDATA, CDATAH);
+                    red = getWord(RDATA, RDATAH);
+                    green = getWord(GDATA, GDATAH);
+                    blue = getWord(BDATA, BDATAH);
+                }
+                break;
+            case ENABLE:
+                break;
+            case ATIME:
+                aTimeValue = rCache[DATA_OFFSET] & 0xFF;
+                break;
+            case CONTROL:
+                controlValue = rCache[DATA_OFFSET] & 0xFF;
+                break;
+            case ID:
+                idValue = rCache[DATA_OFFSET] & 0xFF;
+                break;
+            default:
+                Log.e(LogId, String.format("Unexpected R[0x%02x] = 0x%02x received", regNumber, rCache[DATA_OFFSET]));
+                break;
+        }
+    }
+
+    private int colorTemperature() {
+        if (red + green + blue == 0) return 999;
+
+        double r = red;
+        double g = green;
+        double b = blue;
+
+        double x = (-0.14282 * r) + (1.54924 * g) + (-0.95641 * b);
+        double y = (-0.32466 * r) + (1.57837 * g) + (-0.73191 * b);
+        double z = (-0.68202 * r) + (0.77073 * g) + (0.56332 * b);
+
+        double xyz = x + y + z;
+
+        double xC = x/xyz;
+        double yC = y/xyz;
+
+        double n = (xC - 0.3320) / (0.1858 - yC);
+        double CCT = 449.0 *n*n*n + 3525.0 *n*n + 6823.3 * n + 5520.33;
+
+        if (CCT > 29999) CCT = 29999;
+        if (CCT < 1000) CCT = 1000;
+        return (int) CCT;
+    }
+
+    public int clearColor() {
+        return clear;
+    }
+    public int redColor() {
+        return red;
+    }
+    public int greenColor() {
+        return green;
+    }
+    public int blueColor() {
+        return blue;
+    }
+    public int colorTemp() {
+        return colorTemperature();
+    }
+
+    public boolean isIdOk() {
+        return (idValue == 0x44 || idValue == 0x4D);
+    }
+
+    public void setIntegrationTime(double milliSeconds) {
+        int count = (int) (milliSeconds/2.4);
+        if (count < 1) count = 1;
+        if (count > 256) count = 256;
+        addWriteRequest(ATIME, (byte) (256 - count));
+    }
+
+    public double getIntegrationTime() {
+        return (double)(256 - aTimeValue) * 2.4;
+    }
+
+    public void setGain(int gain) {
+        byte amplifierGain;
+        if (gain < 4) {
+            amplifierGain = CONTROL_AGAIN1;
+        } else if (gain < 16) {
+            amplifierGain = CONTROL_AGAIN4;
+        } else if (gain < 60) {
+            amplifierGain = CONTROL_AGAIN16;
+        } else {
+            amplifierGain = CONTROL_AGAIN60;
+        }
+        addWriteRequest(CONTROL, amplifierGain);
+    }
+
+    public int getGain() {
+        if(controlValue == CONTROL_AGAIN1) return 1;
+        if (controlValue == CONTROL_AGAIN4) return 4;
+        if (controlValue == CONTROL_AGAIN16) return 16;
+        return 60;
+    }
+
+    public void setLed(boolean state) {
+        if (!state) {
+            addWriteRequest(ENABLE, (byte) (ENABLE_AEIN | ENABLE_AEN | ENABLE_PON));
+        } else {
+            addWriteRequest(ENABLE, (byte) (ENABLE_AEN | ENABLE_PON));
+        }
     }
 }

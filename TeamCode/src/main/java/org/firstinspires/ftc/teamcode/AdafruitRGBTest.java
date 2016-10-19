@@ -44,6 +44,8 @@ import com.qualcomm.robotcore.hardware.I2cDevice;
 import com.qualcomm.robotcore.hardware.I2cDeviceSynch;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.steelhead.ftc.Adafruit_ColorSensor;
+
 /**
  * Demonstrates empty OpMode
  */
@@ -51,16 +53,13 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 public class AdafruitRGBTest extends OpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
-    private boolean state = false;
-    private I2cDevice sensorRGB;
-    private I2cDeviceSynch synch;
-    private DeviceInterfaceModule deviceInterfaceModule;
+    private Adafruit_ColorSensor colorSensor;
+    private boolean state = true;
 
     @Override
     public void init() {
-        deviceInterfaceModule = hardwareMap.deviceInterfaceModule.get("dim");
-        sensorRGB = hardwareMap.i2cDevice.get("color");
-        synch = hardwareMap.i2cDeviceSynch.get("color");
+        colorSensor = new Adafruit_ColorSensor(hardwareMap, "color");
+        colorSensor.setLed(false);
 
     }
 
@@ -70,14 +69,15 @@ public class AdafruitRGBTest extends OpMode {
        */
     @Override
     public void init_loop() {
-    /*if(runtime.milliseconds() >= 1000) {
-      if (!state) {
-        state = true;
-      } else {
-        state = false;
-      }
-      digital.setState(state);
-      runtime.reset();*/
+        if (runtime.milliseconds() >= 1000) {
+            if (!state) {
+                state = true;
+            } else {
+                state = false;
+            }
+            colorSensor.setLed(state);
+            runtime.reset();
+        }
     }
 
     /*
