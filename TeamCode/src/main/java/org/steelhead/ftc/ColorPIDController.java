@@ -33,8 +33,12 @@ public class ColorPIDController implements Runnable {
     }
     @Override
     public void run() {
+        double error;
         while (isActive) {
             //TODO: implement the pid controller for the color sensor READ ARTICLE!!
+            //TODO: test color sensor values to see which one gives the best reading
+            error = colorSensor.alpha() - offsetValue;
+            output = kp*error;
         }
     }
 }
