@@ -34,74 +34,47 @@ package org.firstinspires.ftc.teamcode;
 import android.graphics.Color;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.steelhead.ftc.ColorPIDController;
 
 /**
  * Demonstrates empty OpMode
  */
-@Autonomous(name = "Test: Color Sensor", group = "Test")
-public class ColorSensorTest extends OpMode {
+@TeleOp(name = "Sensor: Color Sensor", group = "Sensor")
+public class ColorSensorTest extends LinearOpMode {
 
-    private ElapsedTime runtime = new ElapsedTime();
-    private ColorSensor colorSensor = null;
-    private boolean sensorLed = true;
-    private float[] hsvValues = {0F, 0F, 0F};
+    ColorSensor colorSensor;
+    Thread pidThread;
+    ColorPIDController pidController;
 
-  @Override
-  public void init() {
-      colorSensor = hardwareMap.colorSensor.get("color_sensor");
-      colorSensor.enableLed(sensorLed);
-      telemetry.addData("Status", "Initialized");
-      runtime.reset();
-  }
 
-  /*
-     * Code to run when the op mode is first enabled goes here
-     * @see com.qualcomm.robotcore.eventloop.opmode.OpMode#start()
-     */
-  @Override
-  public void init_loop() {
-      telemetry.addData("Time", runtime.milliseconds());
-      telemetry.update();
-      if(runtime.seconds() >= 1) {
-          if(!sensorLed) {
-              sensorLed = true;
-          } else {
-              sensorLed = false;
-          }
-          runtime.reset();
-      }
-      colorSensor.enableLed(sensorLed);
+    @Override
+    public void runOpMode() throws InterruptedException {
+        colorSensor = hardwareMap.colorSensor.get("color");
+        pidController = new ColorPIDController(colorSensor, 3, 60);
+        pidThread = new Thread(pidController);
 
-  }
+        colorSensor.enableLed(true);
+        pidController.setPID(10, 20, 0);
 
-  /*
-   * This method will be called ONCE when start is pressed
-   * @see com.qualcomm.robotcore.eventloop.opmode.OpMode#loop()
-   */
-  @Override
-  public void start() {
-      runtime.reset();
-      colorSensor.enableLed(false);
-  }
+        waitForStart();
 
-  /*
-   * This method will be called repeatedly in a loop
-   * @see com.qualcomm.robotcore.eventloop.opmode.OpMode#loop()
-   */
-  @Override
-  public void loop() {
-      Color.RGBToHSV(colorSensor.red(), colorSensor.green(), colorSensor.blue(), hsvValues);
-      telemetry.addData("Status", "Run Time: " + runtime.toString());
-      //telemetry.addData("Color", ((Color.HSVToColor(0xff, hsvValues) == Color.BLUE) ? "Blue" : "Not Blue" ));
-      telemetry.addData("Clear", colorSensor.alpha());
-      telemetry.addData("Red  ", colorSensor.red());
-      telemetry.addData("Green", colorSensor.green());
-      telemetry.addData("Blue ", colorSensor.blue());
-      telemetry.update();
-  }
+        // start pid thread
+        pidThread.start();
+
+        while (opModeIsActive()) {
+            telemetry.addData("Output: ", pidController.getOutput());
+            telemetry.update();
+        }
+        colorSensor.enableLed(false);
+        pidController.stop();
+
+    }
 }
 
 

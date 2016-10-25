@@ -16,7 +16,7 @@ public class ColorPIDController implements Runnable {
     private double ki;
     private double kd;
 
-    public void ColorPIDController(ColorSensor colorSensor, int thresholdLow, int thresholdHigh) {
+    public ColorPIDController(ColorSensor colorSensor, int thresholdLow, int thresholdHigh) {
         this.colorSensor = colorSensor;
         this.offsetValue = (thresholdLow + thresholdHigh)/2;
     }
@@ -24,6 +24,10 @@ public class ColorPIDController implements Runnable {
         this.kp = kp;
         this.ki = ki;
         this.kd = kd;
+    }
+
+    public void stop() {
+        isActive = false;
     }
     public boolean isOutputAvailable() {
         return isOutputAvailable;
@@ -34,11 +38,17 @@ public class ColorPIDController implements Runnable {
     @Override
     public void run() {
         double error;
+        double lastError = 0;
+        double integral = 0;
+        double derivative = 0;
         while (isActive) {
             //TODO: implement the pid controller for the color sensor READ ARTICLE!!
             //TODO: test color sensor values to see which one gives the best reading
             error = colorSensor.alpha() - offsetValue;
-            output = kp*error;
+            integral = integral + error;
+            derivative = error - lastError;
+            output = (kp*error) + (ki*integral) + (kd*derivative);
+            lastError = error;
         }
     }
 }
