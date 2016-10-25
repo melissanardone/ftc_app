@@ -57,16 +57,13 @@ public class ColorSensorTest extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         colorSensor = hardwareMap.colorSensor.get("color");
         pidController = new ColorPIDController(colorSensor, 3, 60);
-        pidThread = new Thread(pidController);
 
         colorSensor.enableLed(true);
         pidController.setPID(10, 20, 0);
 
         waitForStart();
 
-        // start pid thread
-        pidThread.start();
-
+        pidController.enable();
         while (opModeIsActive()) {
             telemetry.addData("Output: ", pidController.getOutput());
             telemetry.update();
