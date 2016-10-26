@@ -48,13 +48,21 @@ import org.steelhead.ftc.HardwareSteelheadMainBot;
 @TeleOp(name = "Sensor: Color Sensor", group = "Sensor")
 public class ColorSensorTest extends LinearOpMode {
 
+    private final double MAX_MOTOR_POWER = 0.25;
+    private final double MIN_MOTOR_POWER = -0.25;
+    private final double DRIVE_SPEED = 0.1;
     HardwareSteelheadMainBot robot = new HardwareSteelheadMainBot();
     ColorSensor colorSensor;
     ColorPIDController pidController;
 
+    public double limit(double a) {
+        return Math.min(Math.max(a, MIN_MOTOR_POWER), MAX_MOTOR_POWER);
+    }
 
     @Override
     public void runOpMode() throws InterruptedException {
+        double output = 0;
+
         robot.init(hardwareMap);
 
         robot.leftMotor_1.setDirection(DcMotorSimple.Direction.FORWARD);
@@ -72,6 +80,12 @@ public class ColorSensorTest extends LinearOpMode {
 
         pidController.enable();
         while (opModeIsActive()) {
+            output = pidController.getOutput();
+            robot.leftMotor_1.setPower(limit(DRIVE_SPEED + output));
+            robot.leftMotor_2.setPower(limit(DRIVE_SPEED + output));
+            robot.rightMotor_1.setPower(limit(DRIVE_SPEED - output));
+            robot.rightMotor_2.setPower(limit(DRIVE_SPEED - output));
+
             telemetry.addData("Output: ", pidController.getOutput());
             telemetry.update();
         }
