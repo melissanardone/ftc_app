@@ -31,16 +31,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 
 package org.firstinspires.ftc.teamcode;
 
-import android.graphics.Color;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.steelhead.ftc.ColorPIDController;
+import org.steelhead.ftc.HardwareSteelheadMainBot;
 
 /**
  * Demonstrates empty OpMode
@@ -48,13 +48,20 @@ import org.steelhead.ftc.ColorPIDController;
 @TeleOp(name = "Sensor: Color Sensor", group = "Sensor")
 public class ColorSensorTest extends LinearOpMode {
 
+    HardwareSteelheadMainBot robot = new HardwareSteelheadMainBot();
     ColorSensor colorSensor;
-    Thread pidThread;
     ColorPIDController pidController;
 
 
     @Override
     public void runOpMode() throws InterruptedException {
+        robot.init(hardwareMap);
+
+        robot.leftMotor_1.setDirection(DcMotorSimple.Direction.FORWARD);
+        robot.leftMotor_2.setDirection(DcMotorSimple.Direction.REVERSE);
+        robot.rightMotor_1.setDirection(DcMotorSimple.Direction.FORWARD);
+        robot.rightMotor_2.setDirection(DcMotorSimple.Direction.FORWARD);
+
         colorSensor = hardwareMap.colorSensor.get("color");
         pidController = new ColorPIDController(colorSensor, 3, 60);
 
