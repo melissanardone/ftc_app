@@ -1,6 +1,7 @@
 package org.steelhead.ftc;
 
 import com.qualcomm.robotcore.hardware.ColorSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 /**
  * Created by Alec Matthews on 10/23/2016.
@@ -9,7 +10,6 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 
 public class ColorPIDController {
     //initialize values
-    private ColorSensor internalColorSensor;
     private Thread pidThread;
     private int offsetValue;
     private boolean isOutputAvailable = false;
@@ -18,9 +18,9 @@ public class ColorPIDController {
     private double kp;
     private double ki;
     private double kd;
+    private ElapsedTime runtime;
 
-    public ColorPIDController(ColorSensor colorSensor, int thresholdLow, int thresholdHigh) {
-        this.internalColorSensor = colorSensor;
+    public ColorPIDController(final ColorSensor colorSensor, int thresholdLow, int thresholdHigh) {
         this.offsetValue = (thresholdLow + thresholdHigh)/2;
 
         //Setup the separate thread for calculating the values
@@ -34,7 +34,7 @@ public class ColorPIDController {
                 double integral = 0;
                 double derivative;
                 while (isActive) {
-                    error = internalColorSensor.alpha() - offsetValue;
+                    error = colorSensor.alpha() - offsetValue;
                     integral = integral + error;
                     derivative = error - lastError;
                     output = (kp * error) + (ki * integral) + (kd * derivative);

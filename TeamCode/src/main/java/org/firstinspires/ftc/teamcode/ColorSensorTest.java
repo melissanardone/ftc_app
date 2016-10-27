@@ -66,10 +66,10 @@ public class ColorSensorTest extends LinearOpMode {
         robot.robotBackward();
 
         colorSensor = hardwareMap.colorSensor.get("color");
-        pidController = new ColorPIDController(colorSensor, 3, 60);
+        pidController = new ColorPIDController(colorSensor, 3, 43);
 
         colorSensor.enableLed(true);
-        pidController.setPID(0.002, 0, 0);
+        pidController.setPID(0.02, 0.0005, 0.1);
 
         waitForStart();
 

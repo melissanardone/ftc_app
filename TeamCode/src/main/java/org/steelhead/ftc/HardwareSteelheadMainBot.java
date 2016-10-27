@@ -84,7 +84,7 @@ public class HardwareSteelheadMainBot {
         rightMotor_2.setDirection(DcMotorSimple.Direction.FORWARD);
     }
 
-    public void robotSetZeroPowerBehavior(DcMotor.ZeroPowerBehavior behavior) {
+    public void robotSetZeroPowerBehavior (DcMotor.ZeroPowerBehavior behavior) {
         rightMotor_1.setZeroPowerBehavior(behavior);
         rightMotor_2.setZeroPowerBehavior(behavior);
         leftMotor_1.setZeroPowerBehavior(behavior);
