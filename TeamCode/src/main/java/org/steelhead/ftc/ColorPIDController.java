@@ -18,7 +18,6 @@ public class ColorPIDController {
     private double kp;
     private double ki;
     private double kd;
-    private ElapsedTime runtime;
 
     public ColorPIDController(final ColorSensor colorSensor, int thresholdLow, int thresholdHigh) {
         this.offsetValue = (thresholdLow + thresholdHigh)/2;
@@ -41,15 +40,16 @@ public class ColorPIDController {
                     output = (kp * error) + (ki * integral) + (kd * derivative);
                     lastError = error;
                     prevOutput = output;
-                    if ((prevOutput/-1) > 0 && output < 0) {
+                    if (prevOutput > 0 && output < 0) {
                         integral = 0;
-                    }else if ((prevOutput/-1) < 0 && output > 0) {
+                    }else if (prevOutput < 0 && output > 0) {
                         integral = 0;
                     }else if (output == 0) {
                         integral = 0;
                     }
                     prevOutput = output;
                 }
+                colorSensor.resetDeviceConfigurationForOpMode();
             }
         });
     }
