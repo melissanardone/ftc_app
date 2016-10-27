@@ -61,6 +61,8 @@ public class ColorSensorTest extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         double output = 0;
 
+
+
         robot.init(hardwareMap);
 
         robot.robotBackward();
@@ -68,6 +70,7 @@ public class ColorSensorTest extends LinearOpMode {
         colorSensor = hardwareMap.colorSensor.get("color");
         pidController = new ColorPIDController(colorSensor, 3, 43);
 
+        colorSensor.enableLed(false);
         colorSensor.enableLed(true);
         pidController.setPID(0.02, 0.0005, 0.1);
 

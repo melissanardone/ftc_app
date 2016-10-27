@@ -24,7 +24,7 @@ public class ColorPIDController {
         this.offsetValue = (thresholdLow + thresholdHigh)/2;
 
         //Setup the separate thread for calculating the values
-        //This is in a separate thread so it doesn't slow down the main thead.
+        //This is in a separate thread so it doesn't slow down the main thread.
         pidThread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -33,12 +33,22 @@ public class ColorPIDController {
                 double lastError = 0;
                 double integral = 0;
                 double derivative;
+                double prevOutput = 0;
                 while (isActive) {
                     error = colorSensor.alpha() - offsetValue;
                     integral = integral + error;
                     derivative = error - lastError;
                     output = (kp * error) + (ki * integral) + (kd * derivative);
                     lastError = error;
+                    prevOutput = output;
+                    if ((prevOutput/-1) > 0 && output < 0) {
+                        integral = 0;
+                    }else if ((prevOutput/-1) < 0 && output > 0) {
+                        integral = 0;
+                    }else if (output == 0) {
+                        integral = 0;
+                    }
+                    prevOutput = output;
                 }
             }
         });
