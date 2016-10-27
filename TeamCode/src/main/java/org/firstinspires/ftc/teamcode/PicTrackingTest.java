@@ -36,6 +36,7 @@ import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -67,6 +68,7 @@ import java.util.Locale;
  */
 
 @Autonomous(name="Concept: PicTracking Test", group="Concept")
+@Disabled
 public class PicTrackingTest extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);

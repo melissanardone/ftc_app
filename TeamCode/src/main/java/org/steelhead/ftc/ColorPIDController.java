@@ -4,9 +4,11 @@ import com.qualcomm.robotcore.hardware.ColorSensor;
 
 /**
  * Created by Alec Matthews on 10/23/2016.
+ * This class is a PID controller built for a color sensor.
  */
 
 public class ColorPIDController {
+    //initialize values
     private ColorSensor internalColorSensor;
     private Thread pidThread;
     private int offsetValue;
@@ -21,17 +23,17 @@ public class ColorPIDController {
         this.internalColorSensor = colorSensor;
         this.offsetValue = (thresholdLow + thresholdHigh)/2;
 
+        //Setup the separate thread for calculating the values
+        //This is in a separate thread so it doesn't slow down the main thead.
         pidThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                //ColorSensor colorSensor1 = colorSensor;
+                //Calculate the PID output
                 double error;
                 double lastError = 0;
                 double integral = 0;
-                double derivative = 0;
+                double derivative;
                 while (isActive) {
-                    //TODO: implement the pid controller for the color sensor READ ARTICLE!!
-                    //TODO: test color sensor values to see which one gives the best reading
                     error = internalColorSensor.alpha() - offsetValue;
                     integral = integral + error;
                     derivative = error - lastError;
@@ -41,21 +43,26 @@ public class ColorPIDController {
             }
         });
     }
+    //This function is used to set the PID values. It must be run before the thread is started
     public void setPID(double kp, double ki, double kd) {
         this.kp = kp;
         this.ki = ki;
         this.kd = kd;
     }
+    //Start the thread
     public void enable() {
         pidThread.start();
     }
 
-    public void stop() {
+    //Stop the thread
+    public void disable() {
         isActive = false;
     }
+    @Deprecated
     public boolean isOutputAvailable() {
         return isOutputAvailable;
     }
+    //Get the value of calculated by the PID controller
     public double getOutput() {
         return output;
     }

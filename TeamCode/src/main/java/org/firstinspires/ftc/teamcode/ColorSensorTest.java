@@ -32,12 +32,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. */
 package org.firstinspires.ftc.teamcode;
 
 
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.steelhead.ftc.ColorPIDController;
 import org.steelhead.ftc.HardwareSteelheadMainBot;
@@ -65,16 +63,13 @@ public class ColorSensorTest extends LinearOpMode {
 
         robot.init(hardwareMap);
 
-        robot.leftMotor_1.setDirection(DcMotorSimple.Direction.FORWARD);
-        robot.leftMotor_2.setDirection(DcMotorSimple.Direction.REVERSE);
-        robot.rightMotor_1.setDirection(DcMotorSimple.Direction.FORWARD);
-        robot.rightMotor_2.setDirection(DcMotorSimple.Direction.FORWARD);
+        robot.robotBackward();
 
         colorSensor = hardwareMap.colorSensor.get("color");
         pidController = new ColorPIDController(colorSensor, 3, 60);
 
         colorSensor.enableLed(true);
-        pidController.setPID(10, 20, 0);
+        pidController.setPID(0.002, 0, 0);
 
         waitForStart();
 
@@ -90,7 +85,7 @@ public class ColorSensorTest extends LinearOpMode {
             telemetry.update();
         }
         colorSensor.enableLed(false);
-        pidController.stop();
+        pidController.disable();
 
     }
 }

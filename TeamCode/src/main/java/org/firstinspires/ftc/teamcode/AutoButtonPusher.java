@@ -37,13 +37,11 @@ import com.kauailabs.navx.ftc.AHRS;
 import com.kauailabs.navx.ftc.navXPIDController;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.steelhead.ftc.HardwareSteelheadMainBot;
 
 import java.text.DecimalFormat;
@@ -101,10 +99,7 @@ public class AutoButtonPusher extends LinearOpMode {
         robot.rightMotor_1.setDirection(DcMotor.Direction.FORWARD);
         robot.rightMotor_2.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        robot.rightMotor_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        robot.rightMotor_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        robot.leftMotor_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        robot.leftMotor_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        robot.robotSetZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         telemetry.addData("STATUS:", "init complete");
         telemetry.update();
@@ -152,11 +147,7 @@ public class AutoButtonPusher extends LinearOpMode {
             MIN_OUTPUT_VAL = -0.5;
             MAX_OUTPUT_VAL = 0.5;
 
-
-            robot.leftMotor_1.setDirection(DcMotorSimple.Direction.REVERSE);
-            robot.leftMotor_2.setDirection(DcMotorSimple.Direction.FORWARD);
-            robot.rightMotor_1.setDirection(DcMotorSimple.Direction.REVERSE);
-            robot.rightMotor_2.setDirection(DcMotorSimple.Direction.REVERSE);
+            robot.robotForward();
 
             yawPIDController.setOutputRange(MIN_OUTPUT_VAL, MAX_OUTPUT_VAL);
             yawPIDController.enable(true);

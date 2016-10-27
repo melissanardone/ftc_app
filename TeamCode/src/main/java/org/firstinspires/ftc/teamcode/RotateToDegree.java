@@ -45,7 +45,7 @@ import java.text.DecimalFormat;
 
 /*
  * An example loop op mode where the robot will rotate
- * to a specified angle an then stop.
+ * to a specified angle an then disable.
  *
  * This example uses a simple PID controller configuration
  * with a P coefficient, and will likely need tuning in order

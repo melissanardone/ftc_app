@@ -32,30 +32,20 @@ public class HardwareSteelheadMainBot {
         rightMotor_1 = aHwMap.dcMotor.get(rightMotorName_1);
         rightMotor_2 = aHwMap.dcMotor.get(rightMotorName_2);
 
-        //armMotor = aHwMap.dcMotor.get("armMotor");
-        //shooterMotor = aHwMap.dcMotor.get("shooterMotor");
-
+        //sets the robot direction to backward
         leftMotor_1.setDirection(DcMotorSimple.Direction.FORWARD);
         leftMotor_2.setDirection(DcMotorSimple.Direction.REVERSE);
-
         rightMotor_1.setDirection(DcMotorSimple.Direction.FORWARD);
         rightMotor_2.setDirection(DcMotorSimple.Direction.FORWARD );
 
-        //armMotor.setDirection(DcMotorSimple.Direction.FORWARD);
-        //shooterMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        hardwareLeftPower(0);
-        hardwareRightPower(0);
-        //armMotor.setPower(0);
-        //shooterMotor.setPower(0);
+        robotLeftPower(0);
+        robotRightPower(0);
 
         leftMotor_1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         leftMotor_2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightMotor_1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightMotor_2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        //armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        //shooterMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 
     public void setLeftMotorName(String newName) {
@@ -70,13 +60,34 @@ public class HardwareSteelheadMainBot {
         rightMotorName_2 = newName + "2";
     }
 
-    public void hardwareLeftPower(double power) {
+    public void robotLeftPower(double power) {
         leftMotor_1.setPower(power);
         leftMotor_2.setPower(power);
     }
 
-    public void hardwareRightPower(double power) {
+    public void robotRightPower(double power) {
         rightMotor_1.setPower(power);
         rightMotor_2.setPower(power);
+    }
+
+    public void robotForward() {
+        leftMotor_1.setDirection(DcMotorSimple.Direction.REVERSE);
+        leftMotor_2.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightMotor_1.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightMotor_2.setDirection(DcMotorSimple.Direction.REVERSE);
+    }
+
+    public void robotBackward() {
+        leftMotor_1.setDirection(DcMotorSimple.Direction.FORWARD);
+        leftMotor_2.setDirection(DcMotorSimple.Direction.REVERSE);
+        rightMotor_1.setDirection(DcMotorSimple.Direction.FORWARD);
+        rightMotor_2.setDirection(DcMotorSimple.Direction.FORWARD);
+    }
+
+    public void robotSetZeroPowerBehavior(DcMotor.ZeroPowerBehavior behavior) {
+        rightMotor_1.setZeroPowerBehavior(behavior);
+        rightMotor_2.setZeroPowerBehavior(behavior);
+        leftMotor_1.setZeroPowerBehavior(behavior);
+        leftMotor_2.setZeroPowerBehavior(behavior);
     }
 }

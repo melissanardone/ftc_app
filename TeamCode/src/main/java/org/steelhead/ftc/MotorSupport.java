@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 /**
  * Created by Closet_PC on 9/12/2016.
  */
+@Deprecated
 public class MotorSupport {
 
     private DcMotor dcMotor = null;

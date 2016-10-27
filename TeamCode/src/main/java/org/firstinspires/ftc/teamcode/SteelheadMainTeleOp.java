@@ -36,7 +36,6 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.steelhead.ftc.HardwareSteelheadMainBot;
-import org.steelhead.ftc.HardwareSteelheadTestBot;
 
 /**
  * This file provides basic Telop driving for a Pushbot robot.
@@ -100,8 +99,8 @@ public class SteelheadMainTeleOp extends OpMode{
         // Run wheels in tank mode (note: The joystick goes negative when pushed forwards, so negate it)
         left = gamepad1.left_stick_y;
         right = (gamepad1.right_stick_y);
-        robot.hardwareLeftPower(left);
-        robot.hardwareRightPower(right);
+        robot.robotLeftPower(left);
+        robot.robotRightPower(right);
 
         if(gamepad1.a) {
             telemetry.addData("Shooter", "FIRE");
