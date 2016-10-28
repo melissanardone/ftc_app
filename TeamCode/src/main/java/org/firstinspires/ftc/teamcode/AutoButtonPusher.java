@@ -143,6 +143,8 @@ public class AutoButtonPusher extends LinearOpMode {
                     Log.w("navx", "YAW PID TIMEOUT");
                 }
             }
+            //reset the point maybe this will fix the drive straight issue
+            yawPIDController.setSetpoint(90.0);
             yawPIDController.enable(false);
             MIN_OUTPUT_VAL = -0.5;
             MAX_OUTPUT_VAL = 0.5;

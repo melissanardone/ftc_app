@@ -12,12 +12,16 @@ public class ColorPIDController {
     //initialize values
     private Thread pidThread;
     private int offsetValue;
+
+    @Deprecated
     private boolean isOutputAvailable = false;
+
     private double output;
     private boolean isActive = true;
     private double kp;
     private double ki;
     private double kd;
+    private double tolerance;
 
     public ColorPIDController(final ColorSensor colorSensor, int thresholdLow, int thresholdHigh) {
         this.offsetValue = (thresholdLow + thresholdHigh)/2;
@@ -32,24 +36,38 @@ public class ColorPIDController {
                 double lastError = 0;
                 double integral = 0;
                 double derivative;
-                double prevOutput = 0;
                 while (isActive) {
+
                     error = colorSensor.alpha() - offsetValue;
-                    integral = integral + error;
-                    derivative = error - lastError;
-                    output = (kp * error) + (ki * integral) + (kd * derivative);
-                    lastError = error;
-                    prevOutput = output;
-                    if (prevOutput > 0 && output < 0) {
+                    /*
+                    Calculate the integral term. We are clamping it when the sign changes
+                    when the error is 0 or when the error value is too big.
+                    */
+                    integral = integral + (error*0.017);
+                    if (lastError > 0 && error < 0) {
                         integral = 0;
-                    }else if (prevOutput < 0 && output > 0) {
+                    }else if (lastError < 0 && error > 0) {
                         integral = 0;
-                    }else if (output == 0) {
+                    }else if (error == 0) {
                         integral = 0;
                     }
-                    prevOutput = output;
+                    if (Math.abs(error) > 10) {
+                        integral = 0;
+                    }
+
+                    derivative = ((error - lastError)/0.017);
+                    lastError = error;
+
+                    output = (kp * error) + (ki * integral) + (kd * derivative);
+
+                    //Wait for the sensor to gather new values
+                    //and slow down the loop so the integral term doesn't get too big too fast
+                    try {
+                        Thread.sleep(17);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-                colorSensor.resetDeviceConfigurationForOpMode();
             }
         });
     }
@@ -74,6 +92,12 @@ public class ColorPIDController {
     }
     //Get the value of calculated by the PID controller
     public double getOutput() {
+        if (output < tolerance && output > tolerance) {
+            return 0;
+        }
         return output;
+    }
+    public void setTolerance(double tolerance) {
+        this.tolerance = tolerance;
     }
 }

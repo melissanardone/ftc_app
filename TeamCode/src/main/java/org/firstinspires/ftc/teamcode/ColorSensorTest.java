@@ -49,7 +49,8 @@ public class ColorSensorTest extends LinearOpMode {
 
     private final double MAX_MOTOR_POWER = 0.25;
     private final double MIN_MOTOR_POWER = -0.25;
-    private final double DRIVE_SPEED = 0.1;
+    private final double DRIVE_SPEED = 0.20;
+    private final double TOLERANCE = 1.5;
     HardwareSteelheadMainBot robot = new HardwareSteelheadMainBot();
     ColorSensor colorSensor;
     ColorPIDController pidController;
@@ -69,9 +70,14 @@ public class ColorSensorTest extends LinearOpMode {
         colorSensor = hardwareMap.colorSensor.get("color");
         pidController = new ColorPIDController(colorSensor, 3, 43);
 
+        //Do this magic to make the color sensor work
+        colorSensor.enableLed(true);
         colorSensor.enableLed(false);
         colorSensor.enableLed(true);
-        pidController.setPID(0.02, 0.0005, 0.1);
+        telemetry.addData("Color sensor device id:", colorSensor.getManufacturer());
+        telemetry.update();
+        pidController.setPID(0.03, 0.005, 0.005);
+        pidController.setTolerance(TOLERANCE);
 
         waitForStart();
 
