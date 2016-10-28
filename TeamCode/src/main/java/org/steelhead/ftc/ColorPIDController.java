@@ -92,7 +92,7 @@ public class ColorPIDController {
     }
     //Get the value of calculated by the PID controller
     public double getOutput() {
-        if (output < tolerance && output > tolerance) {
+        if (output < tolerance && output > -tolerance) {
             return 0;
         }
         return output;
