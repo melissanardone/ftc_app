@@ -38,10 +38,12 @@ import com.kauailabs.navx.ftc.navXPIDController;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.ColorSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.steelhead.ftc.ColorPIDController;
 import org.steelhead.ftc.HardwareSteelheadMainBot;
 
 import java.text.DecimalFormat;
@@ -69,7 +71,9 @@ public class AutoButtonPusher extends LinearOpMode {
 
     private boolean calibrationComplete = false;
     private boolean rotateComplete = false;
-    private boolean lineReached = false;
+
+    ColorSensor colorSensor;
+    ColorPIDController pidController;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -85,21 +89,21 @@ public class AutoButtonPusher extends LinearOpMode {
                 AHRS.DeviceDataType.kProcessedData,
                 NAVX_UPDATE_RATE_HZ);
 
-        yawPIDController = new navXPIDController(navxDevice,
-                navXPIDController.navXTimestampedDataSource.YAW);
+
 
         //Configure the device
-        yawPIDController.setContinuous(true);
-        yawPIDController.setOutputRange(MIN_OUTPUT_VAL, MAX_OUTPUT_VAL);
-        yawPIDController.setTolerance(navXPIDController.ToleranceType.ABSOLUTE, TOLERANCE_DEGREES);
-        yawPIDController.setPID(YAW_PID_P, YAW_PID_I, YAW_PID_D);
 
         robot.init(hardwareMap);
+        colorSensor = hardwareMap.colorSensor.get("color");
+        pidController = new ColorPIDController(colorSensor, 3, 22);
 
-        robot.rightMotor_1.setDirection(DcMotor.Direction.FORWARD);
-        robot.rightMotor_2.setDirection(DcMotorSimple.Direction.FORWARD);
+        //Do this magic to make the color sensor work
+        colorSensor.enableLed(true);
+        colorSensor.enableLed(false);
+        colorSensor.enableLed(true);
+        telemetry.addData("Color sensor device id:", colorSensor.getManufacturer());
+        telemetry.update();
 
-        robot.robotSetZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         telemetry.addData("STATUS:", "init complete");
         telemetry.update();
@@ -112,8 +116,42 @@ public class AutoButtonPusher extends LinearOpMode {
         }
         navxDevice.zeroYaw();
 
+        robot.robotBackward();
+
+        robot.leftMotor_2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.rightMotor_2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        robot.leftMotor_2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        robot.rightMotor_2.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+        robot.leftMotor_2.setTargetPosition(500);
+        robot.rightMotor_2.setTargetPosition(500);
+
+        robot.leftMotor_2.setPower(.25);
+        robot.rightMotor_2.setPower(.25);
+
+        while (opModeIsActive() && robot.leftMotor_2.isBusy() && robot.rightMotor_2.isBusy()) {
+
+        }
+        robot.leftMotor_2.setPower(0);
+        robot.rightMotor_2.setPower(0);
+
+        robot.leftMotor_2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        robot.rightMotor_2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
+        robot.rightMotor_1.setDirection(DcMotor.Direction.FORWARD);
+        robot.rightMotor_2.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        robot.robotSetZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
         try {
-            yawPIDController.setSetpoint(90.0);
+            yawPIDController = new navXPIDController(navxDevice,
+                    navXPIDController.navXTimestampedDataSource.YAW);
+
+            yawPIDController.setContinuous(true);
+            yawPIDController.setOutputRange(MIN_OUTPUT_VAL, MAX_OUTPUT_VAL);
+            yawPIDController.setTolerance(navXPIDController.ToleranceType.ABSOLUTE, TOLERANCE_DEGREES);
+            yawPIDController.setPID(YAW_PID_P, YAW_PID_I, YAW_PID_D);
+            yawPIDController.setSetpoint(-45.0);
             yawPIDController.enable(true);
 
             navXPIDController.PIDResult PIDResult = new navXPIDController.PIDResult();
@@ -121,7 +159,7 @@ public class AutoButtonPusher extends LinearOpMode {
 
             DecimalFormat df = new DecimalFormat("#.##");
 
-            while (opModeIsActive() && !rotateComplete && !Thread.currentThread().isInterrupted()) {
+            while ( opModeIsActive() && !rotateComplete && !Thread.currentThread().isInterrupted()) {
                 if (yawPIDController.waitForNewUpdate(PIDResult, DEVICE_TIMEOUT_MS)) {
                     if (PIDResult.isOnTarget()) {
                         robot.rightMotor_1.setPower(0);
@@ -143,20 +181,23 @@ public class AutoButtonPusher extends LinearOpMode {
                     Log.w("navx", "YAW PID TIMEOUT");
                 }
             }
-            //reset the point maybe this will fix the drive straight issue
-            yawPIDController.setSetpoint(90.0);
-            yawPIDController.enable(false);
-            MIN_OUTPUT_VAL = -0.5;
-            MAX_OUTPUT_VAL = 0.5;
 
-            robot.robotForward();
+
+            robot.robotBackward();
+
+            robot.rightMotor_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            robot.rightMotor_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            robot.leftMotor_1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            robot.leftMotor_2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
 
             yawPIDController.setOutputRange(MIN_OUTPUT_VAL, MAX_OUTPUT_VAL);
-            yawPIDController.enable(true);
+            yawPIDController.setSetpoint(135.0);
+            //yawPIDController.enable(true);
 
-            double driveSpeed = 0.25;
+            double driveSpeed = 0.10;
 
-            while (opModeIsActive()&& !lineReached && !Thread.currentThread().isInterrupted()) {
+            while (colorSensor.alpha() < 8 && opModeIsActive() && !Thread.currentThread().isInterrupted()) {
                 if (yawPIDController.waitForNewUpdate(PIDResult, DEVICE_TIMEOUT_MS)) {
                     if (PIDResult.isOnTarget()) {
                         robot.rightMotor_1.setPower(driveSpeed);
@@ -177,12 +218,35 @@ public class AutoButtonPusher extends LinearOpMode {
                 } else {
                     Log.w("navx", "YAW PID TIMEOUT");
                 }
+                telemetry.addData("Color:", colorSensor.alpha());
+                telemetry.update();
             }
+
+            robot.robotBackward();
+            pidController.setPID(0.018, 0.05, 0.00203);
+            pidController.setTolerance(0);
+
+            double output;
+            double DRIVE_SPEED = 0.10;
+
+            pidController.enable();
+            while (opModeIsActive()) {
+                output = pidController.getOutput();
+                robot.leftMotor_1.setPower(limit(DRIVE_SPEED + output));
+                robot.leftMotor_2.setPower(limit(DRIVE_SPEED + output));
+                robot.rightMotor_1.setPower(limit(DRIVE_SPEED - output));
+                robot.rightMotor_2.setPower(limit(DRIVE_SPEED - output));
+
+                telemetry.addData("Output: ", pidController.getOutput());
+                telemetry.update();
+            }
+
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
             navxDevice.close();
+            colorSensor.enableLed(false);
             telemetry.addData("STATUS:", "Complete");
         }
     }
